@@ -3,7 +3,7 @@ import { pool } from "../db.js";
 export const Properties = async (req, res) => {
   try {
     const Properties = await pool.query(`
-      SELECT p.title, p.property_type, p.price,p.pending_property_id, u.user_id,u.user_name AS hosted_by
+      SELECT p.title, p.property_type, p.price,p.pending_property_id,p.property_region,p.approximate_location, u.user_id,u.user_name AS hosted_by
       FROM pending_property_listing_details p
       INNER JOIN user_details u ON p.user_id = u.user_id WHERE property_status='Pending';
     `);
@@ -121,7 +121,6 @@ export const allProperties = async (req, res) => {
     res.status(500).send("Server Error");
   }
 };
-
 
 export const updateProperty = async (req, res) => {
   try {

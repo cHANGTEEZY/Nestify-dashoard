@@ -2,6 +2,7 @@ import { useGetPropertiesQuery } from "../state/api";
 import { useState } from "react";
 import { useCookies } from "react-cookie";
 import { toast } from "react-toastify";
+import { AlertTriangle } from "lucide-react";
 
 import image1 from "../assets/Properties/image1.jpg";
 import image2 from "../assets/Properties/image2.jpg";
@@ -21,16 +22,22 @@ const imageMap = {
 
 const PendingProperties = () => {
   const { data } = useGetPropertiesQuery();
-  console.log(data);
   const [cookies] = useCookies(["adminToken"]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [rejectedUserId, setRejectedUserId] = useState(null);
-  console.log(rejectedUserId);
   const [reason, setReason] = useState("");
+  const [currentPropertyDetails, setCurrentPropertyDetails] = useState(null);
 
   const handleAccept = async (propertyId) => {
+    const confirmAccept = window.confirm(
+      "Are you sure you want to accept this property?"
+    );
+
+    if (!confirmAccept) return;
+
     try {
       const token = cookies.adminToken;
       if (!token) {
@@ -76,6 +83,16 @@ const PendingProperties = () => {
     setReason("");
   };
 
+  const handleViewDetails = (property) => {
+    setCurrentPropertyDetails(property);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setIsDetailsModalOpen(false);
+    setCurrentPropertyDetails(null);
+  };
+
   const handleRejectSubmit = async () => {
     try {
       const token = cookies.adminToken;
@@ -113,93 +130,180 @@ const PendingProperties = () => {
   };
 
   return (
-    <div className="px-4 py-10">
-      <div className="grid grid-cols-2 gap-6">
+    <div className="min-h-screen px-4 py-12 bg-white sm:px-6 lg:px-8">
+      <div className="mx-auto bg-white max-w-7xl">
+        <h1 className="mb-10 text-3xl font-extrabold text-center text-gray-900 bg-white">
+          Pending Property Listings
+        </h1>
         {data && data.length > 0 ? (
-          data.map((property) => (
-            <div
-              key={property.property_id}
-              className="flex items-start max-w-lg p-4 space-x-4 bg-white rounded-lg card"
-            >
-              <div className="w-[200px] h-[200px]">
-                <img
-                  className="object-cover w-full h-full rounded-lg"
-                  src={
-                    property.image_urls && property.image_urls.length > 0
-                      ? imageMap[property.image_urls[0]]
-                      : image1
-                  }
-                  alt={property.title}
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = image1;
-                  }}
-                />
-              </div>
-
-              <div className="flex-1 bg-white">
-                <h2 className="text-lg font-semibold bg-white">
-                  {property.title}
-                </h2>
-                <p className="text-sm text-gray-600 bg-white">
-                  {property.property_type} located at a beautiful destination.
-                </p>
-                <p className="mt-3 text-sm bg-white text-primary">
-                  Hosted By: {property.hosted_by}
-                </p>
-
-                <div className="mt-3">
-                  <p className="text-lg font-bold bg-white">
-                    NRP {property.price}/night
+          <div className="grid grid-cols-1 gap-6 bg-white sm:grid-cols-2 lg:grid-cols-3">
+            {data.map((property) => (
+              <div
+                key={property.pending_property_id}
+                className="overflow-hidden transition duration-300 ease-in-out transform bg-white shadow-lg rounded-2xl hover:-translate-y-1 hover:shadow-2xl"
+              >
+                <div className="relative w-full h-48">
+                  <img
+                    className="absolute inset-0 object-cover w-full h-full"
+                    src={
+                      property.image_urls && property.image_urls.length > 0
+                        ? imageMap[property.image_urls[0]]
+                        : image1
+                    }
+                    alt={property.title}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = image1;
+                    }}
+                  />
+                  <div className="absolute inset-0 transition duration-300 ease-in-out bg-black bg-opacity-25 opacity-0 hover:opacity-100">
+                    <div className="flex items-center justify-center h-full">
+                      <button
+                        onClick={() => handleViewDetails(property)}
+                        className="px-4 py-2 font-semibold text-gray-800 transition duration-300 ease-in-out transform bg-white rounded-full shadow-md hover:bg-gray-100 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                      >
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h2 className="mb-2 text-xl font-semibold text-gray-800">
+                    {property.title}
+                  </h2>
+                  <p className="mb-4 text-sm text-gray-600">
+                    {property.property_type} | Hosted by {property.hosted_by}
                   </p>
-                </div>
-
-                <div className="flex gap-2 mt-2 bg-white">
-                  <button
-                    className="px-4 py-1 text-white bg-green-500 rounded-lg hover:bg-green-600"
-                    onClick={() => handleAccept(property.pending_property_id)}
-                  >
-                    Accept
-                  </button>
-                  <button
-                    className="px-4 py-1 text-white bg-red-500 rounded-lg hover:bg-red-600"
-                    onClick={() => handleOpenModal(property)}
-                  >
-                    Reject
-                  </button>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-2xl font-bold text-indigo-600">
+                      NRP {property.price}/night
+                    </span>
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => handleAccept(property.pending_property_id)}
+                      className="flex-1 px-4 py-2 text-white transition duration-300 ease-in-out transform bg-green-500 rounded-lg hover:bg-green-600 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleOpenModal(property)}
+                      className="flex-1 px-4 py-2 text-white transition duration-300 ease-in-out transform bg-red-500 rounded-lg hover:bg-red-600 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    >
+                      Reject
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
-          <h1>No Pending Properties</h1>
+          <div className="py-12 text-center bg-white">
+            <AlertTriangle className="w-12 h-12 mx-auto text-gray-400 bg-white" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900 bg-white">
+              No Pending Properties
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 bg-white">
+              There are currently no properties pending review.
+            </p>
+          </div>
         )}
       </div>
 
+      {/* Details Modal */}
+      {isDetailsModalOpen && currentPropertyDetails && (
+        <div
+          className="fixed inset-0 z-50 w-full h-full overflow-y-auto bg-gray-600 bg-opacity-50"
+          onClick={handleCloseDetailsModal}
+        >
+          <div
+            className="relative w-full max-w-md p-5 mx-auto border rounded-md shadow-lg top-20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mt-3 text-center">
+              <h3 className="text-lg font-medium leading-6 text-gray-900">
+                {currentPropertyDetails.title}
+              </h3>
+              <div className="py-3 mt-2 px-7">
+                <div className="space-y-2 text-left">
+                  <p>
+                    <strong>Hosted By:</strong>{" "}
+                    {currentPropertyDetails.hosted_by}
+                  </p>
+                  <p>
+                    <strong>User ID:</strong> {currentPropertyDetails.user_id}
+                  </p>
+                  <p>
+                    <strong>Property ID:</strong>{" "}
+                    {currentPropertyDetails.pending_property_id}
+                  </p>
+                  <p>
+                    <strong>Type:</strong>{" "}
+                    {currentPropertyDetails.property_type}
+                  </p>
+                  <p>
+                    <strong>Region:</strong>{" "}
+                    {currentPropertyDetails.property_region}
+                  </p>
+                  <p>
+                    <strong>Location:</strong>{" "}
+                    {currentPropertyDetails.approximate_location}
+                  </p>
+                  <p>
+                    <strong>Price:</strong> NRP {currentPropertyDetails.price}
+                    /night
+                  </p>
+                </div>
+              </div>
+              <div className="items-center px-4 py-3">
+                <button
+                  onClick={handleCloseDetailsModal}
+                  className="w-full px-4 py-2 text-base font-medium text-white bg-gray-500 rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-sm p-6 bg-white rounded-lg">
-            <h2 className="text-lg font-semibold">Reject Property</h2>
-            <textarea
-              className="w-full p-2 mt-3 border border-gray-300 rounded-lg"
-              rows="4"
-              placeholder="Reason for rejecting..."
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-            />
-            <div className="flex justify-end gap-2 mt-4">
-              <button
-                className="px-4 py-1 bg-gray-300 rounded-lg hover:bg-gray-400"
-                onClick={handleCloseModal}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-1 text-white bg-red-500 rounded-lg hover:bg-red-600"
-                onClick={handleRejectSubmit}
-              >
-                Submit
-              </button>
+        <div
+          className="fixed inset-0 z-50 w-full h-full bg-gray-600 bg-opacity-50"
+          onClick={handleCloseModal}
+        >
+          <div
+            className="relative w-full max-w-md p-5 mx-auto bg-white border rounded-md shadow-lg top-20"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mt-3 text-center">
+              <h3 className="text-lg font-medium leading-6 text-gray-900">
+                Reject Property
+              </h3>
+              <div className="py-3 mt-2 px-7">
+                <textarea
+                  className="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-indigo-500"
+                  rows="4"
+                  placeholder="Reason for rejecting..."
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                />
+              </div>
+              <div className="flex justify-end px-4 py-3 space-x-2">
+                <button
+                  onClick={handleCloseModal}
+                  className="px-4 py-2 text-base font-medium text-white bg-gray-500 rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRejectSubmit}
+                  className="px-4 py-2 text-base font-medium text-white bg-red-500 rounded-md shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300"
+                >
+                  Submit
+                </button>
+              </div>
             </div>
           </div>
         </div>
