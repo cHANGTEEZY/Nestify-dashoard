@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
-import PendingProperties from './pendingProperties';
-import AllProperties from './AllProperties';
+import PendingProperties from './PendingProperties';
+import AllProperties from './allProperties';
 
 
 const Properties = () => {

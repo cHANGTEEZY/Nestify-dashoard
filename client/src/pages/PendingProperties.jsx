@@ -3,22 +3,8 @@ import { useState } from "react";
 import { useCookies } from "react-cookie";
 import { toast } from "react-toastify";
 import { AlertTriangle } from "lucide-react";
-
 import image1 from "../assets/Properties/image1.jpg";
-import image2 from "../assets/Properties/image2.jpg";
-import image3 from "../assets/Properties/image3.jpg";
-import image4 from "../assets/Properties/image4.jpg";
-import image5 from "../assets/Properties/image5.jpg";
-import image6 from "../assets/Properties/image6.jpg";
 
-const imageMap = {
-  "image1.jpg": image1,
-  "image2.jpg": image2,
-  "image3.jpg": image3,
-  "image4.jpg": image4,
-  "image5.jpg": image5,
-  "image6.jpg": image6,
-};
 
 const PendingProperties = () => {
   const { data } = useGetPropertiesQuery();
@@ -147,7 +133,7 @@ const PendingProperties = () => {
                     className="absolute inset-0 object-cover w-full h-full"
                     src={
                       property.image_urls && property.image_urls.length > 0
-                        ? imageMap[property.image_urls[0]]
+                        ? property.image_urls[0] // Directly use the first image URL from API
                         : image1
                     }
                     alt={property.title}
@@ -192,6 +178,7 @@ const PendingProperties = () => {
                     >
                       Reject
                     </button>
+                    
                   </div>
                 </div>
               </div>
@@ -211,62 +198,86 @@ const PendingProperties = () => {
       </div>
 
       {/* Details Modal */}
-      {isDetailsModalOpen && currentPropertyDetails && (
-        <div
-          className="fixed inset-0 z-50 w-full h-full overflow-y-auto bg-gray-600 bg-opacity-50"
-          onClick={handleCloseDetailsModal}
-        >
-          <div
-            className="relative w-full max-w-md p-5 mx-auto border rounded-md shadow-lg top-20"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mt-3 text-center">
-              <h3 className="text-lg font-medium leading-6 text-gray-900">
-                {currentPropertyDetails.title}
-              </h3>
-              <div className="py-3 mt-2 px-7">
-                <div className="space-y-2 text-left">
-                  <p>
-                    <strong>Hosted By:</strong>{" "}
-                    {currentPropertyDetails.hosted_by}
-                  </p>
-                  <p>
-                    <strong>User ID:</strong> {currentPropertyDetails.user_id}
-                  </p>
-                  <p>
-                    <strong>Property ID:</strong>{" "}
-                    {currentPropertyDetails.pending_property_id}
-                  </p>
-                  <p>
-                    <strong>Type:</strong>{" "}
-                    {currentPropertyDetails.property_type}
-                  </p>
-                  <p>
-                    <strong>Region:</strong>{" "}
-                    {currentPropertyDetails.property_region}
-                  </p>
-                  <p>
-                    <strong>Location:</strong>{" "}
-                    {currentPropertyDetails.approximate_location}
-                  </p>
-                  <p>
-                    <strong>Price:</strong> NRP {currentPropertyDetails.price}
-                    /night
-                  </p>
-                </div>
-              </div>
-              <div className="items-center px-4 py-3">
-                <button
-                  onClick={handleCloseDetailsModal}
-                  className="w-full px-4 py-2 text-base font-medium text-white bg-gray-500 rounded-md shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300"
-                >
-                  Close
-                </button>
-              </div>
+     {/* Details Modal */}
+{isDetailsModalOpen && currentPropertyDetails && (
+  <div
+    className="fixed inset-0 z-50 w-full h-full overflow-y-auto bg-gray-600 bg-opacity-50"
+    onClick={handleCloseDetailsModal}
+  >
+    <div
+      className="relative w-full max-w-3xl p-8 mx-auto border rounded-md shadow-lg top-20 bg-white"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="mt-3 text-center">
+        <h3 className="text-2xl font-medium leading-6 text-gray-900 mb-6">
+          {currentPropertyDetails.title}
+        </h3>
+        
+        {/* Image Gallery Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+          {currentPropertyDetails.image_urls?.map((imageUrl, index) => (
+            <div 
+              key={index}
+              className="relative h-48 w-full overflow-hidden rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
+            >
+              <img
+                className="object-cover w-full h-full transform hover:scale-105 transition-transform duration-300"
+                src={imageUrl}
+                alt={`Property ${index + 1}`}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = image1;
+                }}
+              />
             </div>
+          ))}
+        </div>
+
+        {/* Property Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left mb-8">
+          <div className="space-y-2">
+            <p className="text-gray-600">
+              <strong className="text-gray-800">Hosted By:</strong>{" "}
+              {currentPropertyDetails.hosted_by}
+            </p>
+            <p className="text-gray-600">
+              <strong className="text-gray-800">Property Type:</strong>{" "}
+              {currentPropertyDetails.property_type}
+            </p>
+            <p className="text-gray-600">
+              <strong className="text-gray-800">Region:</strong>{" "}
+              {currentPropertyDetails.property_region}
+            </p>
+          </div>
+          <div className="space-y-2">
+            <p className="text-gray-600">
+              <strong className="text-gray-800">Location:</strong>{" "}
+              {currentPropertyDetails.approximate_location}
+            </p>
+            <p className="text-gray-600">
+              <strong className="text-gray-800">Price:</strong>{" "}
+              NRP {currentPropertyDetails.price}/night
+            </p>
+            <p className="text-gray-600">
+              <strong className="text-gray-800">Property ID:</strong>{" "}
+              {currentPropertyDetails.pending_property_id}
+            </p>
           </div>
         </div>
-      )}
+
+        {/* Close Button */}
+        <div className="px-4 py-3">
+          <button
+            onClick={handleCloseDetailsModal}
+            className="w-full md:w-auto px-6 py-2 text-base font-medium text-white bg-indigo-600 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          >
+            Close Details
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {isModalOpen && (
         <div
