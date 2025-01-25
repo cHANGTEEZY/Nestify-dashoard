@@ -71,6 +71,11 @@ export const acceptProperties = async (req, res) => {
       [propertyId]
     );
 
+    await pool.query(
+      "DELEte FROM admin_host_messages WHERE pending_property_id=$1",
+      [propertyId]
+    );
+
     res
       .status(200)
       .json({ message: "Property accepted and moved to listings." });
