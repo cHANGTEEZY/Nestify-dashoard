@@ -3,24 +3,8 @@ import { FaEdit, FaTrash, FaTimes } from 'react-icons/fa';
 import { AiOutlineWarning } from 'react-icons/ai';
 import { useAllPropertiesQuery, useUpdatePropertyMutation, useDeletePropertyMutation } from '../state/api';
 
-// Import all images
+// Import fallback image
 import image1 from '../assets/Properties/image1.jpg';
-import image2 from '../assets/Properties/image2.jpg';
-import image3 from '../assets/Properties/image3.jpg';
-import image4 from '../assets/Properties/image4.jpg';
-import image5 from '../assets/Properties/image5.jpg';
-import image6 from '../assets/Properties/image6.jpg';
-
-// Create an image map
-const imageMap = {
-  'image1.jpg': image1,
-  'image2.jpg': image2,
-  'image3.jpg': image3,
-  'image4.jpg': image4,
-  'image5.jpg': image5,
-  'image6.jpg': image6,
-};
-
 
 const AllProperties = () => {
   const { data, isLoading } = useAllPropertiesQuery();
@@ -91,10 +75,10 @@ const AllProperties = () => {
     }
   };
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <div className="p-4 text-gray-600">Loading...</div>;
 
   return (
-    <div className="relative">
+    <div className="relative  p-4">
       {/* Notification Banner */}
       {notification.visible && (
         <div
@@ -118,120 +102,137 @@ const AllProperties = () => {
         <th scope="col" className="px-6 py-3 w-32">Action</th>
       </tr>
     </thead>
-    <tbody>
-      {data?.map((property) => (
-        <tr key={property.property_id} className="bg-white border-b hover:bg-gray-50">
-          <td className="px-6 py-4 font-semibold text-black truncate">{property.property_id}</td>
-
-          <td className="px-2 py-2 truncate">
-            <img 
-                            className="object-cover h-[80px] w-[80px] rounded-lg" 
-                            src={property.image_urls && property.image_urls.length > 0 
-                              ? imageMap[property.image_urls[0]]
-                              : image1}
-                            alt={property.title}
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = image1;
-                            }}
-                          /></td>
-          <td className="py-4 font-semibold text-black truncate">{property.title}</td>
-          <td className="px-6 py-4 font-semibold text-black truncate">
-            {parseFloat(property.price).toLocaleString()}/night
-          </td>
-          <td className="px-6 py-4 font-semibold text-black truncate">{property.property_region}</td>
-          <td className="px-4 py-2 whitespace-nowrap text-sm font-medium">
-            <button
-              className="text-indigo-600 hover:text-indigo-900 mr-3"
-              onClick={() => handleEditClick(property)}
-            >
-              <FaEdit className="inline-block text-lg" />
-            </button>
-            <button
-              className="text-red-600 hover:text-red-900"
-              onClick={() => handleDeleteClick(property.property_id)}
-            >
-              <FaTrash className="inline-block text-lg" />
-            </button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+    <tbody className="bg-white divide-y divide-gray-200">
+            {data?.map((property) => (
+              <tr key={property.property_id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 text-sm font-medium text-gray-900">{property.property_id}</td>
+                <td className="px-4 py-3">
+                  <img
+                    className="h-16 w-16 object-cover rounded-lg"
+                    src={property.image_urls?.[0] || image1}
+                    alt={property.title}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = image1;
+                    }}
+                  />
+                </td>
+                <td className="px-4 py-3 text-sm font-medium text-gray-900">{property.title}</td>
+                <td className="px-4 py-3 text-sm text-gray-900">
+                  NPR {parseFloat(property.price).toLocaleString()}/night
+                </td>
+                <td className="px-4 py-3 text-sm text-gray-900">{property.property_region}</td>
+                <td className="px-4 py-3 text-sm font-medium">
+                  <button
+                    onClick={() => handleEditClick(property)}
+                    className="text-indigo-600 hover:text-indigo-900 mr-4"
+                  >
+                    <FaEdit className="inline-block" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClick(property.property_id)}
+                    className="text-red-600 hover:text-red-900"
+                  >
+                    <FaTrash className="inline-block" />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
 
       {/* Edit Modal */}
       {editingProperty && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">Edit Property</h3>
+          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold">Edit Property</h3>
               <button
                 onClick={() => setEditingProperty(null)}
-                className="text-gray-600 hover:text-gray-800"
+                className="text-gray-500 hover:text-gray-700"
               >
-                <FaTimes />
+                <FaTimes className="text-xl" />
               </button>
             </div>
 
-            <form onSubmit={handleUpdateSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Title</label>
+            <form onSubmit={handleUpdateSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Title</label>
                 <input
                   type="text"
-                  value={editingProperty.title || ''}
-                  onChange={(e) =>
-                    setEditingProperty({
-                      ...editingProperty,
-                      title: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                  value={editingProperty.title}
+                  onChange={(e) => setEditingProperty({...editingProperty, title: e.target.value})}
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Price per Night</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Price</label>
                 <input
                   type="number"
-                  value={editingProperty.price || ''}
-                  onChange={(e) =>
-                    setEditingProperty({
-                      ...editingProperty,
-                      price: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                  value={editingProperty.price}
+                  onChange={(e) => setEditingProperty({...editingProperty, price: e.target.value})}
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Location</label>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Location</label>
                 <input
                   type="text"
-                  value={editingProperty.approximate_location || ''}
-                  onChange={(e) =>
-                    setEditingProperty({
-                      ...editingProperty,
-                      approximate_location: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                  value={editingProperty.approximate_location}
+                  onChange={(e) => setEditingProperty({...editingProperty, approximate_location: e.target.value})}
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Bedrooms</label>
+                <input
+                  type="number"
+                  value={editingProperty.bedrooms}
+                  onChange={(e) => setEditingProperty({...editingProperty, bedrooms: e.target.value})}
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Guests</label>
+                <input
+                  type="number"
+                  value={editingProperty.guests}
+                  onChange={(e) => setEditingProperty({...editingProperty, guests: e.target.value})}
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700">Property Type</label>
+                <select
+                  value={editingProperty.property_type}
+                  onChange={(e) => setEditingProperty({...editingProperty, property_type: e.target.value})}
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="Apartment">Apartment</option>
+                  <option value="House">House</option>
+                  <option value="Villa">Villa</option>
+                  <option value="Cottage">Cottage</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2 flex justify-end space-x-4 mt-6">
                 <button
                   type="button"
                   onClick={() => setEditingProperty(null)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
+                  className="px-5 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-white bg-indigo-600 rounded hover:bg-indigo-700"
+                  className="px-5 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                   Save Changes
                 </button>
@@ -241,34 +242,31 @@ const AllProperties = () => {
         </div>
       )}
 
+
       {/* Delete Modal */}
       {deleteModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-auto bg-gray-500 bg-opacity-75 flex items-center justify-center">
-          <div className="relative bg-white rounded-lg max-w-sm w-full mx-4">
-            <div className="p-6">
-              <div className="flex items-center justify-center text-red-600 mb-4">
-                <AiOutlineWarning className="text-4xl" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 text-center mb-2">
-                Delete Property
-              </h3>
-              <p className="text-sm text-gray-500 text-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="text-center mb-4">
+              <AiOutlineWarning className="mx-auto text-4xl text-red-600 mb-3" />
+              <h3 className="text-xl font-bold mb-2">Confirm Deletion</h3>
+              <p className="text-gray-600">
                 Are you sure you want to delete this property? This action cannot be undone.
               </p>
-              <div className="mt-6 flex justify-center space-x-3">
-                <button
-                  onClick={() => setDeleteModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteConfirm}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700"
-                >
-                  Delete
-                </button>
-              </div>
+            </div>
+            <div className="flex justify-center space-x-4 mt-6">
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="px-5 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-5 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete Permanently
+              </button>
             </div>
           </div>
         </div>

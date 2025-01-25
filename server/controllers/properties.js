@@ -1,19 +1,64 @@
 import { pool } from "../db.js";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+// AWS S3 configuration
+const bucketName = process.env.BUCKET_NAME;
+const bucketRegion = process.env.BUCKET_REGION;
+const accessKey = process.env.ACCESS_KEY;
+const secretAccessKey = process.env.SECRET_ACCESS_KEY;
+
+const s3 = new S3Client({
+  credentials: {
+    accessKeyId: accessKey,
+    secretAccessKey: secretAccessKey,
+  },
+  region: bucketRegion,
+});
+
+// Helper function to generate signed URLs
+const generateSignedUrls = async (imageKeys) => {
+  if (!imageKeys || imageKeys.length === 0) return [];
+  
+  return await Promise.all(
+    imageKeys.map(async (key) => {
+      const params = {
+        Bucket: bucketName,
+        Key: key,
+      };
+      const command = new GetObjectCommand(params);
+      return getSignedUrl(s3, command, { expiresIn: 3600 });
+    })
+  );
+};
 
 export const Properties = async (req, res) => {
   try {
-    const Properties = await pool.query(`
-      SELECT p.title, p.property_type, p.price,p.pending_property_id,p.property_region,p.approximate_location, u.user_id,u.user_name AS hosted_by
+    const properties = await pool.query(`
+      SELECT p.title, p.property_type, p.price, p.pending_property_id, 
+             p.property_region, p.approximate_location, p.image_urls, 
+             u.user_id, u.user_name AS hosted_by
       FROM pending_property_listing_details p
-      INNER JOIN user_details u ON p.user_id = u.user_id WHERE property_status='Pending';
+      INNER JOIN user_details u ON p.user_id = u.user_id 
+      WHERE property_status='Pending';
     `);
 
-    if (Properties.rows.length === 0) {
-      console.log("No properties found.");
+    if (properties.rows.length === 0) {
       return res.status(404).json({ message: "No properties available." });
     }
 
-    res.json(Properties.rows);
+    // Generate signed URLs for each property's images
+    const propertiesWithSignedUrls = await Promise.all(
+      properties.rows.map(async (property) => ({
+        ...property,
+        image_urls: await generateSignedUrls(property.image_urls),
+      }))
+    );
+
+    res.json(propertiesWithSignedUrls);
   } catch (error) {
     console.error(error.message);
     res.status(500).send("Server Error");
@@ -112,21 +157,27 @@ export const rejectProperties = async (req, res) => {
 
 export const allProperties = async (req, res) => {
   try {
-    const allProperties = await pool.query(
-      `
+    const allProperties = await pool.query(`
       SELECT p.*, u.user_name 
       FROM property_listing_details p
       JOIN user_details u ON p.user_id = u.user_id
       ORDER BY p.created_at DESC
-      `
+    `);
+
+    // Generate signed URLs for each property's images
+    const propertiesWithSignedUrls = await Promise.all(
+      allProperties.rows.map(async (property) => ({
+        ...property,
+        image_urls: await generateSignedUrls(property.image_urls),
+      }))
     );
-    res.json(allProperties.rows);
+
+    res.json(propertiesWithSignedUrls);
   } catch (error) {
     console.error(error.message);
     res.status(500).send("Server Error");
   }
 };
-
 export const updateProperty = async (req, res) => {
   try {
     const { id } = req.params;
@@ -150,7 +201,13 @@ export const updateProperty = async (req, res) => {
       return res.status(404).json({ message: "Property not found" });
     }
 
-    res.json(updatedProperty.rows[0]);
+    // Generate signed URLs for the updated property
+    const propertyWithSignedUrls = {
+      ...updatedProperty.rows[0],
+      image_urls: await generateSignedUrls(updatedProperty.rows[0].image_urls),
+    };
+
+    res.json(propertyWithSignedUrls);
   } catch (error) {
     console.error(error.message);
     res.status(500).send("Server Error");
